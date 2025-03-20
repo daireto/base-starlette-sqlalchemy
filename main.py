@@ -22,6 +22,7 @@ from middlewares import middlewares
 from models import admin as admin_views
 from models import db as db_models
 from routers import routers
+from seed import seed
 from services.auth_service import AuthService, IAuthService
 from services.user_service import IUserService, UserService
 from utils.func import get_robohash_url
@@ -42,6 +43,11 @@ async def on_startup():
         logger.info('Connecting to database and initializing models...')
         await conn.init_db(db_models.BaseModel)
         logger.info('Database connected and models initialized')
+
+        if not Settings.server.PROD:
+            await seed()
+
+        logger.info('Application accessible at: ' + Settings.get_server_url())
     except Exception as e:
         Settings.status.status = 'error'
         Settings.status.message = 'cannot connect to database'
@@ -117,6 +123,9 @@ StarletteAdmin(
 ).mount()
 
 if __name__ == '__main__':
+    if not Settings.server.PROD:
+        logger.info('Running in development mode')
+
     uvicorn.run(
         app='main:app',
         port=Settings.server.PORT,

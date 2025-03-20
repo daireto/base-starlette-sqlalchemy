@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from dummy_text_generator import (
-    NAMES,
-    SURNAMES,
     TOPICS,
     generate_comment,
     generate_email_from_username,
@@ -13,8 +11,10 @@ from dummy_text_generator import (
     generate_sentence,
     generate_username_from_fullname,
 )
+from faker import Faker
 
 from core.auth.enums import Roles
+from core.logger import logger
 from core.settings import Settings
 from models.db import (
     BaseModel,
@@ -26,9 +26,11 @@ from models.db import (
     Reactions,
     User,
 )
-from utils.func import get_colored_logger, random_datetime, strip_accents
+from utils.func import random_datetime, strip_accents
 
 LANG = 'es'
+FAKER_LANG = 'es_CO'
+
 USERS_NUMBER = 100
 POSTS_NUMBER = 100
 COMMENTS_PER_POST_NUMBER = 5
@@ -36,9 +38,8 @@ REACTIONS_PER_POST_NUMBER = 50
 REACTIONS_PER_COMMENT_NUMBER = 10
 
 
-logger = get_colored_logger()
-
 conn = Settings.create_db_connection()
+faker = Faker(FAKER_LANG)
 
 
 async def connect():
@@ -75,48 +76,55 @@ async def create_admin():
 
 
 async def seed_users() -> list[User]:
-    logger.info('Seeding users...')
-    users = []
-    usernames = []
-    for _ in range(USERS_NUMBER):
-        first_name = random.choice(NAMES[LANG])
-        last_name = random.choice(SURNAMES[LANG])
-        while True:
-            username = generate_username_from_fullname(
-                f'{first_name} {last_name}'
-            )
-            username = strip_accents(username)
-            if username not in usernames:
-                usernames.append(username)
-                break
-        email = generate_email_from_username(username)
-        gender = random.choice([Gender.MALE, Gender.FEMALE])
-        birthday = random_datetime(min_year=1980, max_year=2004)
-        user = User(
-            uid=uuid4(),
-            first_name=first_name,
-            last_name=last_name,
-            username=username,
-            email=email,
-            role=Roles.USER,
-            gender=gender,
-            birthday=birthday,
-        )
-        user.set_password(username)
-        users.append(user)
+    def get_users(gender: Gender):
+        users = []
+        usernames = []
+        for _ in range(int(USERS_NUMBER / 2)):
+            while True:
+                if gender == Gender.MALE:
+                    first_name = faker.first_name_male()
+                    last_name = faker.last_name_male()
+                else:
+                    first_name = faker.first_name_female()
+                    last_name = faker.last_name_female()
 
+                username = generate_username_from_fullname(
+                    f'{first_name} {last_name}'
+                )
+                username = strip_accents(username)
+                if username not in usernames:
+                    usernames.append(username)
+                    break
+
+            user = User(
+                uid=uuid4(),
+                first_name=first_name,
+                last_name=last_name,
+                username=username,
+                email=generate_email_from_username(username),
+                role=Roles.USER,
+                gender=gender,
+                birthday=random_datetime(min_year=1980, max_year=2004),
+            )
+            user.set_password(username)
+            users.append(user)
+
+        return users
+
+    logger.debug('Seeding users...')
+    users = get_users(Gender.MALE) + get_users(Gender.FEMALE)
     await User.insert_all(users)
     logger.info('Users seeded')
     return users
 
 
 async def seed_posts(users: list[User]) -> list[tuple[Post, str]]:
-    logger.info('Seeding posts...')
+    logger.debug('Seeding posts...')
     posts = []
     posts_and_topics: list[tuple[Post, str]] = []
     for _ in range(POSTS_NUMBER):
         topic = random.choice(TOPICS[LANG])
-        tags = [topic] + random.sample(TOPICS[LANG], random.randint(1, 3))
+        tags = [topic] + [faker.word() for _ in range(random.randint(1, 3))]
         post = Post(
             uid=uuid4(),
             title=generate_sentence(
@@ -142,7 +150,7 @@ async def seed_posts(users: list[User]) -> list[tuple[Post, str]]:
 async def seed_comments(
     users: list[User], posts_and_topics: list[tuple[Post, str]]
 ) -> list[Comment]:
-    logger.info('Seeding comments...')
+    logger.debug('Seeding comments...')
     comments = []
     for post, topic in posts_and_topics:
         for _ in range(COMMENTS_PER_POST_NUMBER):
@@ -164,7 +172,7 @@ async def seed_comments(
 async def seed_post_reactions(
     users: list[User], posts_and_topics: list[tuple[Post, str]]
 ):
-    logger.info('Seeding post reactions...')
+    logger.debug('Seeding post reactions...')
     post_reactions = []
     for post, _ in posts_and_topics:
         for _ in range(REACTIONS_PER_POST_NUMBER):
@@ -184,7 +192,7 @@ async def seed_post_reactions(
 
 
 async def seed_comment_reactions(users: list[User], comments: list[Comment]):
-    logger.info('Seeding comment reactions...')
+    logger.debug('Seeding comment reactions...')
     comment_reactions = []
     for comment in comments:
         for _ in range(REACTIONS_PER_COMMENT_NUMBER):
@@ -204,7 +212,7 @@ async def seed_comment_reactions(users: list[User], comments: list[Comment]):
 
 
 async def seed():
-    logger.info('Seeding database...')
+    logger.debug('Seeding database...')
     await create_admin()
     users = await seed_users()
     posts_and_topics = await seed_posts(users)
