@@ -1,0 +1,17 @@
+{
+    "an_error_has_occurred": "An error has occurred: {error}.",
+    "auth": {
+        "incorrect_credentials": "Incorrect username or password.",
+        "invalid_token": "The session token is invalid.",
+        "expired_token": "The session has expired, please log in again.",
+        "token_schema_not_supported": "The token schema '{schema}' is not supported.",
+        "could_not_decode_token": "Could not decode token: {error}.",
+        "unauthenticated": "You are not authenticated.",
+        "unauthorized": "You do not have the necessary permissions to perform this action."
+    },
+    "user": {
+        "user_already_exists": "The user already exists.",
+        "user_not_found": "The user could not be found.",
+        "passwords_mismatch": "The passwords do not match."
+    }
+}

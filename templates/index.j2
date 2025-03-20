@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url("{{ url_for('static', path='images/bg.jpg') }}") no-repeat center center/cover;
+            color: white;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.938);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: rgba(255, 255, 255, 0.219) solid 2px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .links {
+            list-style: none;
+            display: inline-block;
+        }
+
+        .links li {
+            margin: 0.5rem 0;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: #00d1b2;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .links a:hover {
+            color: #00a9a0;
+        }
+
+        .links img {
+            height: 30px;
+            width: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Home</h1>
+        <ul class="links">
+            <li>
+                <a href="{{ url_for('swagger-ui') }}" target="_blank">
+                    <img src="{{ url_for('static', path='images/svg/swagger.svg') }}" alt="API Docs" height="30px" />
+                    <span>API Docs</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin:index') }}" target="_blank">
+                    <img src="{{ url_for('static', path='images/svg/admin.svg') }}" alt="Admin Interface" height="30px" />
+                    <span>Admin Interface</span>
+                </a>
+            </li>
+            <li>
+                {# TODO: Add Github Repo #}
+                <a href="#" target="_blank">
+                    <img src="{{ url_for('static', path='images/svg/github.svg') }}" alt="Github Repo" height="30px" />
+                    <span>Github Repo</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://www.linkedin.com/in/dairo-mosquera/" target="_blank">
+                    <img src="{{ url_for('static', path='images/svg/linkedin.svg') }}" alt="LinkedIn" height="30px" />
+                    <span>LinkedIn</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+{
+    "an_error_has_occurred": "Ha ocurrido un error: {error}.",
+    "auth": {
+        "incorrect_credentials": "Usuario o contraseña incorrectos.",
+        "invalid_token": "El token de sesión no es valido.",
+        "expired_token": "La sesión ha expirado, por favor inicie sesión nuevamente.",
+        "token_schema_not_supported": "El esquema de token '{schema}' no es soportado.",
+        "could_not_decode_token": "No se pudo decodificar el token: {error}.",
+        "unauthenticated": "No ha iniciado sesión.",
+        "unauthorized": "No tiene los permisos suficientes para realizar esta acción."
+    },
+    "user": {
+        "user_already_exists": "El usuario ya existe.",
+        "user_not_found": "El usuario no pudo ser encontrado.",
+        "passwords_mismatch": "Las contraseñas no coinciden."
+    }
+}
