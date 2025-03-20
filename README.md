@@ -2,7 +2,8 @@
 # Starlette + SQLAlchemy Base Project
 
 A robust foundation for building APIs using Starlette and SQLAlchemy, featuring
-a built-in admin interface, OpenAPI documentation, and dependency injection.
+a built-in admin interface, OpenAPI documentation, dependency injection, and
+more.
 
 <!-- omit in toc -->
 ## Table of Contents
