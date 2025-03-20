@@ -1,14 +1,11 @@
 """This module contains utility functions."""
 
-import logging
 import os
 import random
 import string
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
-
-from colorlog import ColoredFormatter
 
 
 def get_robohash_url(username: str) -> str:
@@ -125,40 +122,6 @@ def random_datetime_by_range(start: datetime, end: datetime) -> datetime:
         Generated datetime.
     """
     return start + (end - start) * random.random()
-
-
-def get_colored_logger(
-    name: str | None = None, level: int = logging.INFO
-) -> logging.Logger:
-    """Creates a logger using the
-    ``colorlog.ColoredFormatter`` formatter.
-
-    Parameters
-    ----------
-    name : str, optional
-        Name of the logger, by default None.
-    level : int, optional
-        Level of the logger, by default logging.INFO.
-
-    Returns
-    -------
-    logging.Logger
-        Logger.
-    """
-    logger = logging.getLogger(name)
-    formatter = ColoredFormatter(
-        fmt=(
-            '  %(log_color)s%(levelname)-8s%(reset)s | '
-            '%(log_color)s%(asctime)s%(reset)s | '
-            '%(log_color)s%(message)s%(reset)s'
-        ),
-        datefmt=r'%Y-%m-%d %H:%M:%S',
-    )
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(level)
-    return logger
 
 
 def strip_accents(text: str) -> str:
