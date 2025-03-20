@@ -1,9 +1,10 @@
 from collections.abc import Callable
+from functools import wraps
 
 from core.definitions import USE_ODATA
 
 
-def use_odata(endpoint: Callable) -> Callable:
+def use_odata(method: Callable) -> Callable:
     """Marks an endpoint as using OData V4 query.
 
     This decorator is used to indicate that the endpoint
@@ -12,11 +13,12 @@ def use_odata(endpoint: Callable) -> Callable:
 
     Parameters
     ----------
-    endpoint : Callable
+    method : Callable
         Endpoint function.
     """
+    @wraps(method)
     async def wrapper(self, *args, **kwargs):
-        return endpoint(self, *args, **kwargs)
+        return await method(self, *args, **kwargs)
 
     setattr(wrapper, USE_ODATA, True)
     return wrapper
