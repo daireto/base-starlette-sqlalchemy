@@ -28,7 +28,9 @@ class AuthRouter(BaseRouter):
                 t('auth.incorrect_credentials'), status_code=401
             )
 
-        return DTOResponse(LoginResponseDTO(accessToken=access_token))
+        return DTOResponse(
+            LoginResponseDTO(accessToken=access_token), wrap=False
+        )
 
     @post('/signup')
     async def signup(
@@ -44,5 +46,7 @@ class AuthRouter(BaseRouter):
         """
         access_token = await service.signup(data)
         return DTOResponse(
-            LoginResponseDTO(accessToken=access_token), status_code=201
+            LoginResponseDTO(accessToken=access_token),
+            wrap=False,
+            status_code=201,
         )
