@@ -62,18 +62,22 @@ class User(BaseModel):
     )
 
     created_by: Mapped[Optional['User']] = relationship(
-        foreign_keys=[created_by_id], remote_side=[uid]
+        foreign_keys=[created_by_id], remote_side=[uid], lazy='noload'
     )
     updated_by: Mapped[Optional['User']] = relationship(
-        foreign_keys=[updated_by_id], remote_side=[uid]
+        foreign_keys=[updated_by_id], remote_side=[uid], lazy='noload'
     )
-    posts: Mapped[list['Post']] = relationship(back_populates='publisher')
-    comments: Mapped[list['Comment']] = relationship(back_populates='user')
+    posts: Mapped[list['Post']] = relationship(
+        back_populates='publisher', lazy='noload'
+    )
+    comments: Mapped[list['Comment']] = relationship(
+        back_populates='user', lazy='noload'
+    )
     post_reactions: Mapped[list['PostReaction']] = relationship(
-        back_populates='user'
+        back_populates='user', lazy='noload'
     )
     comment_reactions: Mapped[list['CommentReaction']] = relationship(
-        back_populates='user'
+        back_populates='user', lazy='noload'
     )
 
     def verify_password(self, password: str) -> bool:
@@ -217,10 +221,14 @@ class Post(BaseModel):
         nullable=False,
     )
 
-    publisher: Mapped['User'] = relationship(back_populates='posts')
-    comments: Mapped[list['Comment']] = relationship(back_populates='post')
+    publisher: Mapped['User'] = relationship(
+        back_populates='posts', lazy='noload'
+    )
+    comments: Mapped[list['Comment']] = relationship(
+        back_populates='post', lazy='noload'
+    )
     reactions: Mapped[list['PostReaction']] = relationship(
-        back_populates='post'
+        back_populates='post', lazy='noload'
     )
 
     @property
@@ -254,10 +262,14 @@ class Comment(BaseModel):
         ForeignKey('posts.uid', ondelete='CASCADE')
     )
 
-    user: Mapped['User'] = relationship(back_populates='comments')
-    post: Mapped['Post'] = relationship(back_populates='comments')
+    user: Mapped['User'] = relationship(
+        back_populates='comments', lazy='noload'
+    )
+    post: Mapped['Post'] = relationship(
+        back_populates='comments', lazy='noload'
+    )
     reactions: Mapped[list['CommentReaction']] = relationship(
-        back_populates='comment'
+        back_populates='comment', lazy='noload'
     )
 
     @property
@@ -293,8 +305,12 @@ class PostReaction(BaseModel):
         ForeignKey('posts.uid', ondelete='CASCADE')
     )
 
-    user: Mapped['User'] = relationship(back_populates='post_reactions')
-    post: Mapped['Post'] = relationship(back_populates='reactions')
+    user: Mapped['User'] = relationship(
+        back_populates='post_reactions', lazy='noload'
+    )
+    post: Mapped['Post'] = relationship(
+        back_populates='reactions', lazy='noload'
+    )
 
 
 class CommentReaction(BaseModel):
@@ -311,5 +327,9 @@ class CommentReaction(BaseModel):
         ForeignKey('comments.uid', ondelete='CASCADE')
     )
 
-    user: Mapped['User'] = relationship(back_populates='comment_reactions')
-    comment: Mapped['Comment'] = relationship(back_populates='reactions')
+    user: Mapped['User'] = relationship(
+        back_populates='comment_reactions', lazy='noload'
+    )
+    comment: Mapped['Comment'] = relationship(
+        back_populates='reactions', lazy='noload'
+    )
