@@ -56,9 +56,10 @@ async def disconnect():
 
 async def create_admin():
     username = 'daireto15'
-    if await User.find(username=username).first():
+    admin = await User.find(username=username).first()
+    if admin:
         logger.info('Admin already exists')
-        return
+        return admin
 
     logger.info('Creating admin...')
     admin = User(
@@ -73,9 +74,10 @@ async def create_admin():
     admin.set_password(username)
     await admin.save()
     logger.info('Admin created')
+    return admin
 
 
-async def seed_users() -> list[User]:
+async def seed_users(admin: User) -> list[User]:
     def get_users(gender: Gender):
         users = []
         usernames = []
@@ -105,6 +107,8 @@ async def seed_users() -> list[User]:
                 role=Roles.USER,
                 gender=gender,
                 birthday=random_datetime(min_year=1980, max_year=2004),
+                created_by_id=admin.uid,
+                updated_by_id=admin.uid,
             )
             user.set_password(username)
             users.append(user)
@@ -213,8 +217,8 @@ async def seed_comment_reactions(users: list[User], comments: list[Comment]):
 
 async def seed():
     logger.debug('Seeding database...')
-    await create_admin()
-    users = await seed_users()
+    admin = await create_admin()
+    users = await seed_users(admin)
     posts_and_topics = await seed_posts(users)
     comments = await seed_comments(users, posts_and_topics)
     await seed_post_reactions(users, posts_and_topics)
