@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 
 from core.auth.enums import Roles
 from core.bases.base_dto import BaseRequestDTO, BaseResponseDTO
-from models.db import Gender
+from models.db import Gender, Reactions
 
 
 class SelfUserUpdateRequestDTO(BaseRequestDTO):
@@ -92,11 +92,40 @@ class UserUpdateRequestDTO(UserRequestDTO):
 
 
 class RelatedUserResponseDTO(BaseResponseDTO):
-    uid: UUID = Field(title='UID', description='User ID')
     username: str = Field(title='Username', description='Username')
     firstName: str = Field(title='First name', description='First name')
     lastName: str = Field(title='Last name', description='Last name')
-    role: Roles = Field(title='Role', description='Role')
+
+
+class RelatedPostResponseDTO(BaseResponseDTO):
+    uid: UUID = Field(title='UID', description='Post ID')
+    title: str = Field(title='Title', description='Title')
+
+
+class RelatedCommentResponseDTO(BaseResponseDTO):
+    uid: UUID = Field(title='UID', description='Comment ID')
+    body: str = Field(title='Body', description='Body')
+
+
+class RelatedPostReactionResponseDTO(BaseResponseDTO):
+    uid: UUID = Field(title='UID', description='Post reaction ID')
+    reactionType: Reactions = Field(
+        title='Reaction type', description='Reaction type'
+    )
+    post: RelatedPostResponseDTO = Field(
+        title='Post', description='Post where the reaction was created.'
+    )
+
+
+class RelatedCommentReactionResponseDTO(BaseResponseDTO):
+    uid: UUID = Field(title='UID', description='Comment reaction ID')
+    reactionType: Reactions = Field(
+        title='Reaction type', description='Reaction type'
+    )
+    comment: RelatedCommentResponseDTO = Field(
+        title='Comment',
+        description='Comment where the reaction was created.',
+    )
 
 
 class UserResponseDTO(BaseResponseDTO):
@@ -117,13 +146,23 @@ class UserResponseDTO(BaseResponseDTO):
         description='Indicates if the user is active',
         default=True,
     )
-    createdAt: datetime = Field(
-        title='Created at',
-        description='Date when the user was created.',
+    posts: list[RelatedPostResponseDTO] = Field(
+        title='Posts', description='Posts created by the user.', default=[]
     )
-    updatedAt: datetime = Field(
-        title='Updated at',
-        description='Date when the user was last updated.',
+    comments: list[RelatedCommentResponseDTO] = Field(
+        title='Comments',
+        description='Comments created by the user.',
+        default=[],
+    )
+    post_reactions: list[RelatedPostReactionResponseDTO] = Field(
+        title='Post reactions',
+        description='Post reactions created by the user.',
+        default=[],
+    )
+    comment_reactions: list[RelatedCommentReactionResponseDTO] = Field(
+        title='Comment reactions',
+        description='Comment reactions created by the user.',
+        default=[],
     )
     createdBy: RelatedUserResponseDTO | None = Field(
         title='Created by',
@@ -134,4 +173,12 @@ class UserResponseDTO(BaseResponseDTO):
         title='Updated by',
         description='Last user who updated the user.',
         default=None,
+    )
+    createdAt: datetime = Field(
+        title='Created at',
+        description='Date when the user was created.',
+    )
+    updatedAt: datetime = Field(
+        title='Updated at',
+        description='Date when the user was last updated.',
     )
