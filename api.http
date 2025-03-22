@@ -52,8 +52,9 @@ Authorization: Bearer {{accessToken}}
 # @prompt accessToken
 # @prompt page
 # @prompt filter
+# @prompt expand
 # @prompt responseType
-GET http://{{host}}/users?responseType={{responseType}}&$page={{page}}&$top=30&$orderby=username&$filter={{filter}} HTTP/1.1
+GET http://{{host}}/users?responseType={{responseType}}&$page={{page}}&$top=30&$orderby=username&$filter={{filter}}&$expand={{expand}} HTTP/1.1
 Content-type: {{contentType}}
 Accept-Language: {{acceptLanguage}}
 Authorization: Bearer {{accessToken}}
