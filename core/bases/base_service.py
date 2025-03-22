@@ -8,6 +8,7 @@ from typing import TypeVar
 from odata_v4_query import ODataQueryOptions
 from odata_v4_query.utils.sqlalchemy import apply_to_sqlalchemy_query
 from sqlactive.async_query import AsyncQuery
+from sqlactive.types import EagerSchema
 
 from core.api.request import Request
 from utils.pagination import PaginatedResponse, PaginationType
@@ -22,7 +23,9 @@ class BaseService(ABC):
 
     request: Request
 
-    async def get_odata_count(self, odata_options: ODataQueryOptions, query: AsyncQuery[ModelType]) -> int | None:
+    async def get_odata_count(
+        self, odata_options: ODataQueryOptions, query: AsyncQuery[ModelType]
+    ) -> int | None:
         """Gets the number of items in the query
         if the ``$count`` option is set to ``True``.
 
@@ -61,11 +64,32 @@ class BaseService(ABC):
         AsyncQuery[ModelType]
             Async query.
         """
+        expand = odata_options.expand
+        odata_options.expand = None
+
         query = AsyncQuery(apply_to_sqlalchemy_query(odata_options, model))
         if odata_options.search:
             query.search(odata_options.search)
 
+        expand_schema = self.get_expand_schema()
+        if expand and expand_schema:
+            schema = expand_schema.copy()
+            for entity in expand_schema.keys():
+                if entity.key not in expand:
+                    del schema[entity]
+            query.with_schema(schema)
+
         return query
+
+    def get_expand_schema(self) -> EagerSchema | None:
+        """Gets the expand schema.
+
+        Returns
+        -------
+        EagerSchema | None
+            Expand schema.
+        """
+        return None
 
     def to_paginated_response(
         self,
