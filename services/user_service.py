@@ -5,19 +5,25 @@ from uuid import UUID
 
 from odata_v4_query import ODataQueryOptions
 from passlib.hash import pbkdf2_sha256
+from sqlactive.definitions import JOINED, SUBQUERY
+from sqlactive.types import EagerSchema
 from sqlalchemy import or_
 
 from core import I18N
 from core.api.errors import BadRequestError
 from core.bases.base_service import BaseService
 from dtos.user_dto import (
+    RelatedCommentReactionResponseDTO,
+    RelatedCommentResponseDTO,
+    RelatedPostReactionResponseDTO,
+    RelatedPostResponseDTO,
     RelatedUserResponseDTO,
     SelfUserUpdateRequestDTO,
     UserCreateRequestDTO,
     UserResponseDTO,
     UserUpdateRequestDTO,
 )
-from models.db import User
+from models.db import CommentReaction, PostReaction, User
 from utils.func import get_robohash_url
 from utils.pagination import PaginatedResponse
 
@@ -132,25 +138,13 @@ class UserService(IUserService):
         self, odata_options: ODataQueryOptions
     ) -> PaginatedResponse[UserResponseDTO]:
         query = self.get_async_query(odata_options, User)
+        query.join(User.created_by).join(User.updated_by)
 
-        users = await query.all()
-        data = [
-            UserResponseDTO(
-                uid=user.uid,
-                username=user.username,
-                firstName=user.first_name,
-                lastName=user.last_name,
-                email=user.email,
-                role=user.role,
-                gender=user.gender,
-                birthday=user.birthday,
-                avatarURL=get_robohash_url(user.username),
-                isActive=user.is_active,
-                createdAt=user.created_at,
-                updatedAt=user.updated_at,
-            )
-            for user in users
-        ]
+        if not odata_options.orderby:
+            query.order_by(User.username, User.created_at.desc())
+
+        users = await query.unique_all()
+        data = [self.__get_response_dto(user) for user in users]
 
         count = await self.get_odata_count(odata_options, query)
         return self.to_paginated_response(odata_options, data, count)
@@ -162,41 +156,7 @@ class UserService(IUserService):
         if user is None:
             return None
 
-        created_by = None
-        updated_by = None
-        if user.created_by is not None:
-            created_by = RelatedUserResponseDTO(
-                uid=user.created_by.uid,
-                username=user.created_by.username,
-                firstName=user.created_by.first_name,
-                lastName=user.created_by.last_name,
-                role=user.created_by.role,
-            )
-        if user.updated_by is not None:
-            updated_by = RelatedUserResponseDTO(
-                uid=user.updated_by.uid,
-                username=user.updated_by.username,
-                firstName=user.updated_by.first_name,
-                lastName=user.updated_by.last_name,
-                role=user.updated_by.role,
-            )
-
-        return UserResponseDTO(
-            uid=user.uid,
-            username=user.username,
-            firstName=user.first_name,
-            lastName=user.last_name,
-            email=user.email,
-            role=user.role,
-            gender=user.gender,
-            birthday=user.birthday,
-            avatarURL=get_robohash_url(user.username),
-            isActive=user.is_active,
-            createdAt=user.created_at,
-            updatedAt=user.updated_at,
-            createdBy=created_by,
-            updatedBy=updated_by,
-        )
+        return self.__get_response_dto(user)
 
     async def create_user(
         self, data: UserCreateRequestDTO, creator_id: str
@@ -219,20 +179,7 @@ class UserService(IUserService):
             updated_by_id=UUID(creator_id),
         )
 
-        return UserResponseDTO(
-            uid=user.uid,
-            username=user.username,
-            firstName=user.first_name,
-            lastName=user.last_name,
-            email=user.email,
-            role=user.role,
-            gender=user.gender,
-            birthday=user.birthday,
-            avatarURL=get_robohash_url(user.username),
-            isActive=user.is_active,
-            createdAt=user.created_at,
-            updatedAt=user.updated_at,
-        )
+        return self.__get_response_dto(user)
 
     async def update_user(
         self,
@@ -267,6 +214,66 @@ class UserService(IUserService):
             user.is_active = data.isActive
         await user.save()
 
+        return self.__get_response_dto(user)
+
+    async def delete_user(self, uid: str) -> None:
+        user = await User.get(UUID(uid))
+        if user:
+            await user.delete()
+
+    def __get_response_dto(self, user: User) -> UserResponseDTO:
+        posts = [
+            RelatedPostResponseDTO(uid=post.uid, title=post.title)
+            for post in user.posts
+        ]
+
+        comments = [
+            RelatedCommentResponseDTO(uid=comment.uid, body=comment.body)
+            for comment in user.comments
+        ]
+
+        post_reactions = [
+            RelatedPostReactionResponseDTO(
+                uid=reaction.uid,
+                reactionType=reaction.reaction_type,
+                post=RelatedPostResponseDTO(
+                    uid=reaction.post.uid, title=reaction.post.title
+                ),
+            )
+            for reaction in user.post_reactions
+        ]
+
+        comment_reactions = [
+            RelatedCommentReactionResponseDTO(
+                uid=reaction.uid,
+                reactionType=reaction.reaction_type,
+                comment=RelatedCommentResponseDTO(
+                    uid=reaction.comment.uid, body=reaction.comment.body
+                ),
+            )
+            for reaction in user.comment_reactions
+        ]
+
+        created_by = (
+            RelatedUserResponseDTO(
+                username=user.created_by.username,
+                firstName=user.created_by.first_name,
+                lastName=user.created_by.last_name,
+            )
+            if user.created_by
+            else None
+        )
+
+        updated_by = (
+            RelatedUserResponseDTO(
+                username=user.updated_by.username,
+                firstName=user.updated_by.first_name,
+                lastName=user.updated_by.last_name,
+            )
+            if user.updated_by
+            else None
+        )
+
         return UserResponseDTO(
             uid=user.uid,
             username=user.username,
@@ -278,11 +285,30 @@ class UserService(IUserService):
             birthday=user.birthday,
             avatarURL=get_robohash_url(user.username),
             isActive=user.is_active,
+            posts=posts,
+            comments=comments,
+            post_reactions=post_reactions,
+            comment_reactions=comment_reactions,
+            createdBy=created_by,
+            updatedBy=updated_by,
             createdAt=user.created_at,
             updatedAt=user.updated_at,
         )
 
-    async def delete_user(self, uid: str) -> None:
-        user = await User.get(UUID(uid))
-        if user:
-            await user.delete()
+    def get_expand_schema(self) -> EagerSchema:
+        return {
+            User.posts: SUBQUERY,
+            User.comments: SUBQUERY,
+            User.post_reactions: (
+                SUBQUERY,
+                {
+                    PostReaction.post: JOINED,
+                },
+            ),
+            User.comment_reactions: (
+                SUBQUERY,
+                {
+                    CommentReaction.comment: JOINED,
+                },
+            ),
+        }
