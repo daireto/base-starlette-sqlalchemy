@@ -36,10 +36,8 @@ class BaseService(ABC):
 
         Returns
         -------
-        int
-            Number of items.
-        None
-            If the ``$count`` option is not set or is set to ``False``.
+        int | None
+            Number of items if the ``$count`` is ``True``.
         """
         if not odata_options.count:
             return None
