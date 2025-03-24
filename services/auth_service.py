@@ -50,8 +50,9 @@ class IAuthService(BaseService, ABC):
         Raises
         ------
         BadRequestError
-            - If the user already exists.
-            - If the passwords don't match.
+            If the user already exists.
+        BadRequestError
+            If the passwords don't match.
         """
 
 
