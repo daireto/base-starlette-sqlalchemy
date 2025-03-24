@@ -11,7 +11,16 @@
     },
     "user": {
         "user_already_exists": "The user already exists.",
-        "user_not_found": "The user could not be found.",
+        "user_not_found": "The user was not found.",
         "passwords_mismatch": "The passwords do not match."
+    },
+    "post": {
+        "post_not_found": "The post was not found."
+    },
+    "comment": {
+        "comment_not_found": "The comment was not found."
+    },
+    "reaction": {
+        "reaction_not_found": "The reaction was not found."
     }
 }
