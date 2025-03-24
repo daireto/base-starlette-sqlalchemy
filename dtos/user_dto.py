@@ -154,12 +154,12 @@ class UserResponseDTO(BaseResponseDTO):
         description='Comments created by the user.',
         default=[],
     )
-    post_reactions: list[RelatedPostReactionResponseDTO] = Field(
+    postReactions: list[RelatedPostReactionResponseDTO] = Field(
         title='Post reactions',
         description='Post reactions created by the user.',
         default=[],
     )
-    comment_reactions: list[RelatedCommentReactionResponseDTO] = Field(
+    commentReactions: list[RelatedCommentReactionResponseDTO] = Field(
         title='Comment reactions',
         description='Comment reactions created by the user.',
         default=[],

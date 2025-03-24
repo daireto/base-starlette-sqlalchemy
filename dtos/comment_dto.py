@@ -9,11 +9,10 @@ from models.db import Reactions
 
 class CommentRequestDTO(BaseRequestDTO):
     body: str = Field(title='Body', description='Body')
-    post_id: UUID = Field(title='Post ID', description='Post ID')
 
 
 class CommentCreateRequestDTO(CommentRequestDTO):
-    pass
+    postId: UUID = Field(title='Post ID', description='Post ID')
 
 
 class CommentUpdateRequestDTO(CommentRequestDTO):
@@ -41,7 +40,6 @@ class RelatedReactionResponseDTO(BaseResponseDTO):
 class CommentResponseDTO(BaseResponseDTO):
     uid: UUID = Field(title='UID', description='Comment ID')
     body: str = Field(title='Body', description='Body')
-    tags: list[str] = Field(title='Tags', description='Tags')
     user: CommentAuthorResponseDTO = Field(
         title='Commented by',
         description='User who created the comment.',
@@ -54,6 +52,10 @@ class CommentResponseDTO(BaseResponseDTO):
         title='Reactions',
         description='Comment reactions.',
         default=[],
+    )
+    createdAt: datetime = Field(
+        title='Created at',
+        description='Date when the comment was created.',
     )
     updatedAt: datetime = Field(
         title='Updated at',
