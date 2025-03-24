@@ -60,7 +60,7 @@ class IUserService(BaseService, ABC):
         Returns
         -------
         UserResponseDTO | None
-            User.
+            User if found.
         """
 
     @abstractmethod
@@ -108,13 +108,14 @@ class IUserService(BaseService, ABC):
         Returns
         -------
         UserResponseDTO | None
-            Updated user.
+            Updated user if found.
 
         Raises
         ------
         BadRequestError
-            - If the user already exists.
-            - If the passwords don't match.
+            If the user already exists.
+        BadRequestError
+            If the passwords don't match.
         """
 
     @abstractmethod
@@ -125,6 +126,21 @@ class IUserService(BaseService, ABC):
         ----------
         uid : str
             User ID.
+        """
+
+    @abstractmethod
+    def get_response_dto(self, user: User) -> UserResponseDTO:
+        """Gets the response DTO for the given user.
+
+        Parameters
+        ----------
+        user : User
+            User.
+
+        Returns
+        -------
+        UserResponseDTO
+            Response DTO.
         """
 
 
@@ -141,10 +157,10 @@ class UserService(IUserService):
         query.join(User.created_by).join(User.updated_by)
 
         if not odata_options.orderby:
-            query.order_by(User.username, User.created_at.desc())
+            query.order_by('username', '-created_at')
 
         users = await query.unique_all()
-        data = [self.__get_response_dto(user) for user in users]
+        data = [self.get_response_dto(user) for user in users]
 
         count = await self.get_odata_count(odata_options, query)
         return self.to_paginated_response(odata_options, data, count)
@@ -156,7 +172,7 @@ class UserService(IUserService):
         if user is None:
             return None
 
-        return self.__get_response_dto(user)
+        return self.get_response_dto(user)
 
     async def create_user(
         self, data: UserCreateRequestDTO, creator_id: str
@@ -179,7 +195,7 @@ class UserService(IUserService):
             updated_by_id=UUID(creator_id),
         )
 
-        return self.__get_response_dto(user)
+        return self.get_response_dto(user)
 
     async def update_user(
         self,
@@ -187,14 +203,21 @@ class UserService(IUserService):
         data: UserUpdateRequestDTO | SelfUserUpdateRequestDTO,
         updater_id: str,
     ) -> UserResponseDTO | None:
-        if await User.find(
-            or_(User.username == data.username, User.email == data.email)
-        ).first():
-            raise BadRequestError(self.t('user.user_already_exists'))
-
         user = await User.get(UUID(uid))
         if user is None:
             return None
+
+        if (
+            data.username != user.username
+            and await User.find(User.username == data.username).first()
+        ):
+            raise BadRequestError(self.t('user.user_already_exists'))
+
+        if (
+            data.email != user.email
+            and await User.find(User.email == data.email).first()
+        ):
+            raise BadRequestError(self.t('user.user_already_exists'))
 
         if data.password is not None:
             if data.password != data.confirmPassword:
@@ -214,14 +237,14 @@ class UserService(IUserService):
             user.is_active = data.isActive
         await user.save()
 
-        return self.__get_response_dto(user)
+        return self.get_response_dto(user)
 
     async def delete_user(self, uid: str) -> None:
         user = await User.get(UUID(uid))
         if user:
             await user.delete()
 
-    def __get_response_dto(self, user: User) -> UserResponseDTO:
+    def get_response_dto(self, user: User) -> UserResponseDTO:
         posts = [
             RelatedPostResponseDTO(uid=post.uid, title=post.title)
             for post in user.posts
@@ -287,8 +310,8 @@ class UserService(IUserService):
             isActive=user.is_active,
             posts=posts,
             comments=comments,
-            post_reactions=post_reactions,
-            comment_reactions=comment_reactions,
+            postReactions=post_reactions,
+            commentReactions=comment_reactions,
             createdBy=created_by,
             updatedBy=updated_by,
             createdAt=user.created_at,
