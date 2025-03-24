@@ -24,13 +24,19 @@ from models import db as db_models
 from routers import routers
 from seed import seed
 from services.auth_service import AuthService, IAuthService
+from services.comment_service import CommentService, ICommentService
+from services.post_service import IPostService, PostService
+from services.reaction_service import IReactionService, ReactionService
 from services.user_service import IUserService, UserService
 from utils.func import get_robohash_url
 
 services = ServiceCollection()
 services.add_transient(I18N)
-services.add_scoped(IUserService, UserService)
 services.add_scoped(IAuthService, AuthService)
+services.add_scoped(ICommentService, CommentService)
+services.add_scoped(IPostService, PostService)
+services.add_scoped(IReactionService, ReactionService)
+services.add_scoped(IUserService, UserService)
 service_provider = services.build_provider()
 
 templates = Jinja2Templates(directory='templates')
