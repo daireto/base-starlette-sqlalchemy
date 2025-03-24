@@ -28,11 +28,11 @@ class UserRouter(BaseRouter):
     async def list_users(
         self, service: IUserService
     ) -> PaginationDTOResponse[UserResponseDTO]:
-        """Gets the list of users.
+        """Gets a paginated list of users.
 
         ### Responses
-        200 : list[UserResponseDTO]
-            List of users.
+        200 : PaginationDTOResponse[UserResponseDTO]
+            Paginated list of users.
         """
         odata_options = self.parse_odata()
         users = await service.list_users(odata_options)
@@ -47,7 +47,7 @@ class UserRouter(BaseRouter):
         """Creates a new user.
 
         ### Responses
-        201 : UserResponseDTO
+        201 : DTOResponse[UserResponseDTO]
             Created user.
         """
         user = await service.create_user(data, self.request.user.uid)
@@ -67,7 +67,7 @@ class UserRouter(BaseRouter):
             User ID.
 
         ### Responses
-        200 : UserResponseDTO
+        200 : DTOResponse[UserResponseDTO]
             User.
         404 : ErrorResponse
             User not found.
@@ -93,7 +93,7 @@ class UserRouter(BaseRouter):
             User ID.
 
         ### Responses
-        200 : UserResponseDTO
+        200 : DTOResponse[UserResponseDTO]
             Updated user.
         404 : ErrorResponse
             User not found.
