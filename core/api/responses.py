@@ -34,7 +34,6 @@ class DTOResponse(Generic[ResponseDTO], JSONResponse):
     def __init__(
         self,
         data: ResponseDTO | list[ResponseDTO],
-        wrap: bool = True,
         status_code: int = 200,
         headers: Mapping[str, str] | None = None,
         media_type: str | None = None,
@@ -44,9 +43,8 @@ class DTOResponse(Generic[ResponseDTO], JSONResponse):
             response_data = [element.to_response() for element in data]
         else:
             response_data = data.to_response()
-        content = {'data': response_data} if wrap else response_data
         super(JSONResponse, self).__init__(
-            content, status_code, headers, media_type, background
+            response_data, status_code, headers, media_type, background
         )
 
 
