@@ -255,7 +255,10 @@ class StarletteAPISpec:
         return [route_path.split('/')[1].capitalize()]
 
     def _get_params_schema(
-        self, parsed_docs: Docstring, auth_required: bool = False, use_odata: bool = False
+        self,
+        parsed_docs: Docstring,
+        auth_required: bool = False,
+        use_odata: bool = False,
     ) -> list[Parameter]:
         """Get the parameters of the endpoint.
 
@@ -414,8 +417,7 @@ class StarletteAPISpec:
                 name='$orderby',
                 param_in='query',  # type: ignore
                 description=(
-                    'Orders results.'
-                    f'{ODATA_V4_QUERY_DOCS_MESSAGE}'
+                    'Orders results.' f'{ODATA_V4_QUERY_DOCS_MESSAGE}'
                 ),
                 required=False,
                 schema=Schema(type=DataType.STRING),
@@ -560,11 +562,6 @@ class StarletteAPISpec:
         annotations_mapper: dict[str, type] = {}
         annotation = func_signature.return_annotation
 
-        try:
-            is_paginated = annotation.__name__.startswith('Pagination')
-        except Exception:
-            is_paginated = False
-
         if isclass(annotation):
             annotations_mapper[annotation.__name__] = annotation
         else:
@@ -580,23 +577,21 @@ class StarletteAPISpec:
 
         responses_schema: Responses = {}
         for response in parsed_docs.responses:
-            if response.type_hint.startswith('list['):
-                response.type_hint = response.type_hint.replace('list[', '')
-                response.type_hint = response.type_hint.replace(']', '')
-                response_annotation = annotations_mapper.get(
-                    response.type_hint, None
-                )
+            if type_hint := self._get_generic_response_type_name(
+                response.type_hint, ('list', 'array', 'pag')
+            ):
+                response_annotation = annotations_mapper.get(type_hint, None)
                 if response_annotation is None:
                     self._logger.warning(
-                        f'{response.type_hint!r} of '
-                        f'list[{response.type_hint!r}] is not a valid type'
+                        f'{type_hint!r} of '
+                        f'{response.type_hint!r} is not a valid type'
                     )
                     continue
 
                 if not issubclass(response_annotation, BaseModel):
                     self._logger.warning(
-                        f'{response.type_hint!r} of '
-                        f'list[{response.type_hint!r}] is not a subclass of '
+                        f'{type_hint!r} of '
+                        f'{response.type_hint!r} is not a subclass of '
                         'BaseModel'
                     )
                     continue
@@ -604,6 +599,7 @@ class StarletteAPISpec:
                 items = PydanticSchema(schema_class=response_annotation)
                 schema = Schema(type=DataType.ARRAY, items=items)
 
+                is_paginated = response.type_hint.lower().startswith('pag')
                 if is_paginated:
                     schema = Schema(
                         type=DataType.OBJECT,
@@ -637,15 +633,14 @@ class StarletteAPISpec:
                         },
                     )
 
-                schema = Schema(
-                    type=DataType.OBJECT,
-                    properties={'data': schema},
-                )
+                schema.title = response.type_hint
 
             else:
-                response_annotation = annotations_mapper.get(
-                    response.type_hint, None
+                type_hint = (
+                    self._get_generic_response_type_name(response.type_hint)
+                    or response.type_hint
                 )
+                response_annotation = annotations_mapper.get(type_hint, None)
                 if response_annotation is None:
                     self._logger.warning(
                         f'{response.type_hint!r} is not a valid type'
@@ -653,14 +648,7 @@ class StarletteAPISpec:
                     continue
 
                 if issubclass(response_annotation, BaseModel):
-                    schema = Schema(
-                        type=DataType.OBJECT,
-                        properties={
-                            'data': PydanticSchema(
-                                schema_class=response_annotation
-                            )
-                        },
-                    )
+                    schema = PydanticSchema(schema_class=response_annotation)
                 else:
                     schema = Schema(type=DataType.OBJECT)
 
@@ -683,6 +671,37 @@ class StarletteAPISpec:
             )
 
         return responses_schema
+
+    def _get_generic_response_type_name(
+        self, type_hint: str, prefix: str | tuple[str, ...] | None = None
+    ) -> str | None:
+        """Gets the generic response type name.
+
+        If ``prefix`` is given, it returns the genetic type name
+        if ``type_hint`` starts with it, otherwise it returns ``None``.
+
+        If ``prefix`` is not given, it returns the generic type name
+        if ``type_hint`` is a generic type, otherwise it returns ``None``.
+
+        Parameters
+        ----------
+        type_hint : str
+            Type hint.
+        prefix : str | tuple[str, ...] | None, optional
+            Prefix of the type hint, by default None.
+
+        Returns
+        -------
+        str | None
+            Generic response type name.
+        """
+        if prefix and not type_hint.lower().startswith(prefix):
+            return None
+
+        if '[' not in type_hint or ']' not in type_hint:
+            return None
+
+        return type_hint.split('[', 1)[1].rsplit(']', 1)[0]
 
     def _add_auth_error_responses_schema(
         self, responses_schema: dict[str, Response | Reference]
