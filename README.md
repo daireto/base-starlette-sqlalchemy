@@ -12,6 +12,10 @@ more.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the Application](#running-the-application)
+    - [Previews](#previews)
+        - [Home](#home)
+        - [API Documentation](#api-documentation)
+        - [Admin Interface](#admin-interface)
 - [Project Structure](#project-structure)
 - [Development](#development)
     - [Entry Point](#entry-point)
@@ -118,8 +122,36 @@ PORT=8000
 The application would be available at:
 
 - API: http://localhost:8000
-- Admin Interface: http://localhost:8000/admin
 - API Documentation: http://localhost:8000/docs
+- Admin Interface: http://localhost:8000/admin
+
+### Previews
+
+#### Home
+
+![Preview of the Home page](docs/images/Home.png)
+
+#### API Documentation
+
+![Preview of the API Documentation](docs/images/API_Docs_1.png)
+
+![Preview of the API Documentation](docs/images/API_Docs_2.png)
+
+#### Admin Interface
+
+![Login page of the Admin Interface](docs/images/Admin_Interface_Login.png)
+
+![Home page of the Admin Interface](docs/images/Admin_Interface_Home_1.png)
+
+![Home page of the Admin Interface](docs/images/Admin_Interface_Home_2.png)
+
+![Users page of the Admin Interface](docs/images/Admin_Interface_Users.png)
+
+![Posts page of the Admin Interface](docs/images/Admin_Interface_Posts.png)
+
+![Comments page of the Admin Interface](docs/images/Admin_Interface_Comments.png)
+
+![Reactions page of the Admin Interface](docs/images/Admin_Interface_Reactions.png)
 
 ## Project Structure
 
