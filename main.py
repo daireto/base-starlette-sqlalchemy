@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -8,7 +10,6 @@ from starlette.requests import Request
 from starlette.routing import Mount
 from starlette.routing import Route as StarletteRoute
 from starlette.staticfiles import StaticFiles
-from starlette.templating import Jinja2Templates
 from starlette_di import DependencyInjectionMiddleware, ServiceCollection
 
 from core import logger
@@ -39,12 +40,12 @@ services.add_scoped(IReactionService, ReactionService)
 services.add_scoped(IUserService, UserService)
 service_provider = services.build_provider()
 
-templates = Jinja2Templates(directory='templates')
-
 conn = Settings.create_db_connection()
 
 
-async def on_startup():
+@asynccontextmanager
+async def lifespan(_):
+    # Startup
     try:
         logger.info('Connecting to database and initializing models...')
         await conn.init_db(db_models.BaseModel)
@@ -59,15 +60,16 @@ async def on_startup():
         Settings.status.message = 'cannot connect to database'
         logger.critical(f'Database connection error: {e}')
 
+    yield  # Application is running
 
-async def on_shutdown():
+    # Shutdown
     logger.info('Disconnecting from database...')
     await conn.close(db_models.BaseModel)
     logger.info('Shutting down...')
 
 
 async def homepage(request: Request):
-    return templates.TemplateResponse(
+    return Settings.templates.TemplateResponse(
         request, 'index.j2', {'title': Settings.api_spec.OPENAPI_TITLE}
     )
 
@@ -103,8 +105,7 @@ app = Starlette(
     debug=not Settings.server.PROD,
     routes=routes,
     middleware=middlewares,
-    on_startup=[on_startup],
-    on_shutdown=[on_shutdown],
+    lifespan=lifespan,
 )
 
 StarletteAPISpec(

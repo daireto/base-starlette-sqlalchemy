@@ -9,6 +9,7 @@ from typing import Literal
 from sqlactive import DBConnection
 from starlette.config import Config
 from starlette.datastructures import CommaSeparatedStrings, Secret
+from starlette.templating import Jinja2Templates
 
 from utils.func import check_file_exists
 
@@ -314,6 +315,9 @@ class Settings:
         ),
     )
     """Admin interface configuration."""
+
+    templates = Jinja2Templates('templates')
+    """Templates."""
 
     @classmethod
     def get_logger_conf(cls) -> str:
