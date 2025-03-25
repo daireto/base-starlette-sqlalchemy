@@ -33,6 +33,7 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           PYTHONMALLOC: "debug"
+          DATABASE_URL: "sqlite+aiosqlite://"
         run: |
           coverage run -m pytest -v
           coverage xml

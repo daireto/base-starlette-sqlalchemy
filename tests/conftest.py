@@ -1,14 +1,12 @@
 import pytest
 from starlette.testclient import TestClient
 
-from core.settings import Settings
 from main import app
 
 
 @pytest.fixture(scope='module')
 def test_client():
     with TestClient(app) as client:
-        Settings.database.DATABASE_URL = 'sqlite+aiosqlite://'
         yield client
 
 
