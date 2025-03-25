@@ -16,6 +16,7 @@ from core import logger
 from core.bases.base_router import BaseRouter
 from core.definitions import AUTH_REQUIRED, USE_ODATA
 from core.errors import InvalidRoutePathError
+from core.settings import Settings
 
 from .errors import HTTPError
 from .request import Request
@@ -140,7 +141,7 @@ class Route(StarletteRoute):
 
         async def app(scope: Scope, receive: Receive, send: Send) -> None:
             request = Request(scope, receive, send)
-            router = router_class(request)
+            router = router_class(request, Settings.templates)
 
             try:
                 router.prev()
@@ -149,11 +150,8 @@ class Route(StarletteRoute):
                 )
                 response = await injected_func()
 
-            except ValidationError as e:
-                response = ErrorResponse(e, status_code=400)
-
-            except HTTPError as e:
-                response = ErrorResponse(e)
+            except (ValidationError, HTTPError) as error:
+                response = ErrorResponse(error)
 
             except Exception as e:
                 logger.error(f'{func.__qualname__}: {e}')

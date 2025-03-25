@@ -5,7 +5,7 @@ to define routers.
 from abc import ABC
 
 from odata_v4_query import ODataQueryOptions, ODataQueryParser
-from pydantic import BaseModel, Field
+from starlette.templating import Jinja2Templates
 
 from core import I18N, logger
 from core.api.errors import (
@@ -21,19 +21,14 @@ from core.settings import Settings
 from utils.func import parse_accept_language
 
 
-class _PaginationParams(BaseModel):
-    """Pagination parameters."""
-
-    page: int = Field(title='Page', default=0, ge=0)
-    skip: int = Field(title='Skip', default=0, ge=0)
-    limit: int = Field(title='Limit', default=0, ge=1, le=100)
-
-
 class BaseRouter(ABC):
     """Base class for routers."""
 
     request: Request
     """Request handler."""
+
+    templates: Jinja2Templates
+    """Templates handler."""
 
     base_path: str = ''
     """Base path for the router endpoints."""
@@ -41,17 +36,22 @@ class BaseRouter(ABC):
     parser: ODataQueryParser
     """OData V4 query parser."""
 
-    def __init__(self, request: Request, base_path: str = '') -> None:
+    def __init__(
+        self, request: Request, templates: Jinja2Templates, base_path: str = ''
+    ) -> None:
         """Creates a new instance of the router class.
 
         Parameters
         ----------
         request : Request
             Request handler.
+        templates : Jinja2Templates
+            Templates handler.
         base_path : str, optional
             Base path for the router endpoints, by default ''.
         """
         self.request = request
+        self.templates = templates
         self.base_path = base_path
         self.parser = ODataQueryParser()
 
