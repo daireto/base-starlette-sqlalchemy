@@ -1,7 +1,6 @@
 import asyncio
 import random
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from dummy_text_generator import (
     TOPICS,
@@ -99,7 +98,6 @@ async def seed_users(admin: User) -> list[User]:
                     break
 
             user = User(
-                uid=uuid4(),
                 first_name=first_name,
                 last_name=last_name,
                 username=username,
@@ -130,7 +128,6 @@ async def seed_posts(users: list[User]) -> list[tuple[Post, str]]:
         topic = random.choice(TOPICS[LANG])
         tags = [topic] + [faker.word() for _ in range(random.randint(1, 3))]
         post = Post(
-            uid=uuid4(),
             title=generate_sentence(
                 lang=LANG,
                 topic=topic,
@@ -159,7 +156,6 @@ async def seed_comments(
     for post, topic in posts_and_topics:
         for _ in range(COMMENTS_PER_POST_NUMBER):
             comment = Comment(
-                uid=uuid4(),
                 body=generate_comment(lang=LANG, topic=topic),
                 user_id=random.choice(users).uid,
                 post_id=post.uid,
