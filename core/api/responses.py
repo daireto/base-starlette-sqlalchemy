@@ -88,6 +88,7 @@ class ErrorResponse(JSONResponse):
     ) -> None:
         if isinstance(error, ValidationError):
             content = {'errors': error.errors(include_url=False)}
+            status_code = 400
         elif isinstance(error, HTTPError):
             content = {'message': error.message}
             status_code = error.status_code
