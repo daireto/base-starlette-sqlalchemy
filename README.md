@@ -1,6 +1,8 @@
 <!-- omit in toc -->
 # Starlette + SQLAlchemy Base Project
 
+[![Coverage Status](https://coveralls.io/repos/github/daireto/base-starlette-sqlalchemy/badge.svg?branch=main)](https://coveralls.io/github/daireto/base-starlette-sqlalchemy?branch=main)
+
 A robust foundation for building APIs using Starlette and SQLAlchemy, featuring
 a built-in admin interface, OpenAPI documentation, dependency injection, and
 more.
