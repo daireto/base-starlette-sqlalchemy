@@ -1,6 +1,7 @@
 """This module provides the user session data class."""
 
 from datetime import datetime, timezone
+from uuid import UUID
 
 from starlette.authentication import BaseUser
 
@@ -10,7 +11,7 @@ from .enums import Roles
 class UserSession(BaseUser):
     """User session handler."""
 
-    uid: str
+    uid: UUID
     username: str
     first_name: str
     last_name: str
@@ -22,7 +23,7 @@ class UserSession(BaseUser):
 
     def __init__(
         self,
-        uid: str,
+        uid: UUID,
         username: str,
         first_name: str = '',
         last_name: str = '',
@@ -51,7 +52,7 @@ class UserSession(BaseUser):
         return f'{self.first_name} {self.last_name}'.strip()
 
     @property
-    def identity(self) -> str:
+    def identity(self) -> UUID:
         """User's ID."""
         return self.uid
 
@@ -78,7 +79,7 @@ class UnauthenticatedUserSession(UserSession):
     """Unauthenticated user session handler."""
 
     def __init__(self, error_message: str) -> None:
-        self.uid = ''
+        self.uid = UUID('00000000-0000-0000-0000-000000000000')
         self.username = ''
         self.first_name = ''
         self.last_name = ''

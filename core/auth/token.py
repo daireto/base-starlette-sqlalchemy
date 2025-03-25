@@ -1,6 +1,7 @@
 """This module provides JWT token tools."""
 
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from jwt import decode, encode
 from pydantic import BaseModel
@@ -9,7 +10,7 @@ from .enums import Roles
 
 
 class TokenPayload(BaseModel):
-    uid: str
+    uid: UUID
     username: str
     first_name: str = ''
     last_name: str = ''
@@ -43,7 +44,7 @@ def create_token(
         JWT token.
     """
     payload = {
-        'uid': data.uid,
+        'uid': str(data.uid),
         'username': data.username,
         'first_name': data.first_name,
         'last_name': data.last_name,
@@ -76,4 +77,5 @@ def decode_token(
     payload = decode(
         token, secret, algorithms=[algorithm] if algorithm else None
     )
+    payload['uid'] = UUID(payload['uid'])
     return TokenPayload(**payload)
