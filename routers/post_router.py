@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from core import I18N
 from core.api.methods import delete, get, post, put
 from core.api.odata import use_odata
@@ -53,17 +55,17 @@ class PostRouter(BaseRouter):
         post = await service.create_post(data, self.request.user.uid)
         return DTOResponse(post, status_code=201)
 
-    @get('/{uid:str}')
+    @get('/{uid:uuid}')
     async def get_post(
         self,
-        uid: str,
+        uid: UUID,
         service: IPostService,
         t: I18N,
     ) -> DTOResponse[PostResponseDTO] | ErrorResponse:
         """Gets the post with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Post ID.
 
         ### Responses
@@ -78,10 +80,10 @@ class PostRouter(BaseRouter):
 
         return DTOResponse(post)
 
-    @put('/{uid:str}')
+    @put('/{uid:uuid}')
     async def update_post(
         self,
-        uid: str,
+        uid: UUID,
         data: PostUpdateRequestDTO,
         service: IPostService,
         t: I18N,
@@ -89,7 +91,7 @@ class PostRouter(BaseRouter):
         """Updates the post with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Post ID.
 
         ### Responses
@@ -104,16 +106,16 @@ class PostRouter(BaseRouter):
 
         return DTOResponse(post)
 
-    @delete('/{uid:str}')
+    @delete('/{uid:uuid}')
     async def delete_post(
         self,
-        uid: str,
+        uid: UUID,
         service: IPostService,
     ) -> EmptyResponse:
         """Deletes the post with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Post ID.
 
         ### Responses

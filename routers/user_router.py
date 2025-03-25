@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from core import I18N
 from core.api.methods import delete, get, post, put
 from core.api.odata import use_odata
@@ -53,17 +55,17 @@ class UserRouter(BaseRouter):
         user = await service.create_user(data, self.request.user.uid)
         return DTOResponse(user, status_code=201)
 
-    @get('/{uid:str}')
+    @get('/{uid:uuid}')
     async def get_user(
         self,
-        uid: str,
+        uid: UUID,
         service: IUserService,
         t: I18N,
     ) -> DTOResponse[UserResponseDTO] | ErrorResponse:
         """Gets the user with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             User ID.
 
         ### Responses
@@ -78,10 +80,35 @@ class UserRouter(BaseRouter):
 
         return DTOResponse(user)
 
-    @put('/{uid:str}')
+    @get('/{username_or_email:str}')
+    async def get_user_by_username_or_email(
+        self,
+        username_or_email: str,
+        service: IUserService,
+        t: I18N,
+    ) -> DTOResponse[UserResponseDTO] | ErrorResponse:
+        """Gets the user with the provided username or email.
+
+        ### Parameters
+        username_or_email : str
+            Username or email.
+
+        ### Responses
+        200 : DTOResponse[UserResponseDTO]
+            User.
+        404 : ErrorResponse
+            User not found.
+        """
+        user = await service.get_user_by_username_or_email(username_or_email)
+        if user is None:
+            return self.not_found(t('user.user_not_found'))
+
+        return DTOResponse(user)
+
+    @put('/{uid:uuid}')
     async def update_user(
         self,
-        uid: str,
+        uid: UUID,
         data: UserUpdateRequestDTO,
         service: IUserService,
         t: I18N,
@@ -89,7 +116,7 @@ class UserRouter(BaseRouter):
         """Updates the user with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             User ID.
 
         ### Responses
@@ -104,16 +131,16 @@ class UserRouter(BaseRouter):
 
         return DTOResponse(user)
 
-    @delete('/{uid:str}')
+    @delete('/{uid:uuid}')
     async def delete_user(
         self,
-        uid: str,
+        uid: UUID,
         service: IUserService,
     ) -> EmptyResponse:
         """Deletes the user with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             User ID.
 
         ### Responses

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from core import I18N
 from core.api.methods import delete, get, post, put
 from core.api.odata import use_odata
@@ -53,17 +55,17 @@ class CommentRouter(BaseRouter):
         comment = await service.create_comment(data, self.request.user.uid)
         return DTOResponse(comment, status_code=201)
 
-    @get('/{uid:str}')
+    @get('/{uid:uuid}')
     async def get_comment(
         self,
-        uid: str,
+        uid: UUID,
         service: ICommentService,
         t: I18N,
     ) -> DTOResponse[CommentResponseDTO] | ErrorResponse:
         """Gets the comment with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Comment ID.
 
         ### Responses
@@ -78,10 +80,10 @@ class CommentRouter(BaseRouter):
 
         return DTOResponse(comment)
 
-    @put('/{uid:str}')
+    @put('/{uid:uuid}')
     async def update_comment(
         self,
-        uid: str,
+        uid: UUID,
         data: CommentUpdateRequestDTO,
         service: ICommentService,
         t: I18N,
@@ -89,7 +91,7 @@ class CommentRouter(BaseRouter):
         """Updates the comment with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Comment ID.
 
         ### Responses
@@ -104,16 +106,16 @@ class CommentRouter(BaseRouter):
 
         return DTOResponse(comment)
 
-    @delete('/{uid:str}')
+    @delete('/{uid:uuid}')
     async def delete_comment(
         self,
-        uid: str,
+        uid: UUID,
         service: ICommentService,
     ) -> EmptyResponse:
         """Deletes the comment with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Comment ID.
 
         ### Responses

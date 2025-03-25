@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from core import I18N
 from core.api.methods import delete, get, post
 from core.api.odata import use_odata
@@ -67,17 +69,17 @@ class ReactionRouter(BaseRouter):
         reaction = await service.create_reaction(data, self.request.user.uid)
         return DTOResponse(reaction, status_code=201)
 
-    @get('/posts/{uid:str}')
+    @get('/posts/{uid:uuid}')
     async def get_post_reaction(
         self,
-        uid: str,
+        uid: UUID,
         service: IReactionService,
         t: I18N,
     ) -> DTOResponse[ReactionResponseDTO] | ErrorResponse:
         """Gets the post reaction with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Reaction ID.
 
         ### Responses
@@ -92,17 +94,17 @@ class ReactionRouter(BaseRouter):
 
         return DTOResponse(reaction)
 
-    @get('/comments/{uid:str}')
+    @get('/comments/{uid:uuid}')
     async def get_comment_reaction(
         self,
-        uid: str,
+        uid: UUID,
         service: IReactionService,
         t: I18N,
     ) -> DTOResponse[ReactionResponseDTO] | ErrorResponse:
         """Gets the comment reaction with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Reaction ID.
 
         ### Responses
@@ -117,16 +119,16 @@ class ReactionRouter(BaseRouter):
 
         return DTOResponse(reaction)
 
-    @delete('/posts/{uid:str}')
+    @delete('/posts/{uid:uuid}')
     async def delete_post_reaction(
         self,
-        uid: str,
+        uid: UUID,
         service: IReactionService,
     ) -> EmptyResponse:
         """Deletes the post reaction with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Reaction ID.
 
         ### Responses
@@ -136,16 +138,16 @@ class ReactionRouter(BaseRouter):
         await service.delete_reaction(uid, 'post')
         return EmptyResponse()
 
-    @delete('/comments/{uid:str}')
+    @delete('/comments/{uid:uuid}')
     async def delete_comment_reaction(
         self,
-        uid: str,
+        uid: UUID,
         service: IReactionService,
     ) -> EmptyResponse:
         """Deletes the comment reaction with the provided ID.
 
         ### Parameters
-        uid : str
+        uid : UUID
             Reaction ID.
 
         ### Responses
