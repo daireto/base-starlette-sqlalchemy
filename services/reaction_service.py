@@ -44,13 +44,13 @@ class IReactionService(BaseService, ABC):
 
     @abstractmethod
     async def get_reaction(
-        self, uid: str, target_type: ReactionTargetType
+        self, uid: UUID, target_type: ReactionTargetType
     ) -> ReactionResponseDTO | None:
         """Gets a reaction with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Reaction ID.
         target_type : ReactionTargetType
             Type of the target.
@@ -63,7 +63,7 @@ class IReactionService(BaseService, ABC):
 
     @abstractmethod
     async def create_reaction(
-        self, data: ReactionCreateRequestDTO, publisher: str
+        self, data: ReactionCreateRequestDTO, publisher: UUID
     ) -> ReactionResponseDTO:
         """Creates a new reaction.
 
@@ -71,7 +71,7 @@ class IReactionService(BaseService, ABC):
         ----------
         data : ReactionCreateRequestDTO
             Data for the new reaction.
-        publisher : str
+        publisher : UUID
             ID of the publisher.
 
         Returns
@@ -82,13 +82,13 @@ class IReactionService(BaseService, ABC):
 
     @abstractmethod
     async def delete_reaction(
-        self, uid: str, target_type: ReactionTargetType
+        self, uid: UUID, target_type: ReactionTargetType
     ) -> None:
         """Deletes the reaction with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Reaction ID.
         target_type : ReactionTargetType
             Type of the target.
@@ -136,15 +136,15 @@ class ReactionService(IReactionService):
         return self.to_paginated_response(odata_options, data, count)
 
     async def get_reaction(
-        self, uid: str, target_type: ReactionTargetType
+        self, uid: UUID, target_type: ReactionTargetType
     ) -> ReactionResponseDTO | None:
         if target_type == 'comment':
             reaction = await CommentReaction.get(
-                UUID(uid), join=[CommentReaction.user, CommentReaction.comment]
+                uid, join=[CommentReaction.user, CommentReaction.comment]
             )
         else:
             reaction = await PostReaction.get(
-                UUID(uid), join=[PostReaction.user, PostReaction.post]
+                uid, join=[PostReaction.user, PostReaction.post]
             )
 
         if reaction is None:
@@ -153,30 +153,36 @@ class ReactionService(IReactionService):
         return self.get_response_dto(reaction)
 
     async def create_reaction(
-        self, data: ReactionCreateRequestDTO, publisher: str
+        self, data: ReactionCreateRequestDTO, publisher: UUID
     ) -> ReactionResponseDTO:
         if data.targetType == 'comment':
             reaction = await CommentReaction.create(
                 reaction_type=data.reactionType,
-                user_id=UUID(publisher),
+                user_id=publisher,
                 comment_id=data.targetId,
+            )
+            reaction = await CommentReaction.get_or_fail(
+                reaction.uid, join=[CommentReaction.user, CommentReaction.comment]
             )
         else:
             reaction = await PostReaction.create(
                 reaction_type=data.reactionType,
-                user_id=UUID(publisher),
+                user_id=publisher,
                 post_id=data.targetId,
+            )
+            reaction = await PostReaction.get_or_fail(
+                reaction.uid, join=[PostReaction.user, PostReaction.post]
             )
 
         return self.get_response_dto(reaction)
 
     async def delete_reaction(
-        self, uid: str, target_type: ReactionTargetType
+        self, uid: UUID, target_type: ReactionTargetType
     ) -> None:
         if target_type == 'comment':
-            reaction = await CommentReaction.get(UUID(uid))
+            reaction = await CommentReaction.get(uid)
         else:
-            reaction = await PostReaction.get(UUID(uid))
+            reaction = await PostReaction.get(uid)
 
         if reaction:
             await reaction.delete()

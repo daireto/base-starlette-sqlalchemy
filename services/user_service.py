@@ -49,12 +49,12 @@ class IUserService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def get_user(self, uid: str) -> UserResponseDTO | None:
+    async def get_user(self, uid: UUID) -> UserResponseDTO | None:
         """Gets a user with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             User ID.
 
         Returns
@@ -64,8 +64,25 @@ class IUserService(BaseService, ABC):
         """
 
     @abstractmethod
+    async def get_user_by_username_or_email(
+        self, username: str
+    ) -> UserResponseDTO | None:
+        """Gets a user with the provided username or email.
+
+        Parameters
+        ----------
+        username_or_email : str
+            Username or email.
+
+        Returns
+        -------
+        UserResponseDTO | None
+            User if found.
+        """
+
+    @abstractmethod
     async def create_user(
-        self, data: UserCreateRequestDTO, creator_id: str
+        self, data: UserCreateRequestDTO, creator_id: UUID
     ) -> UserResponseDTO:
         """Creates a new user.
 
@@ -73,7 +90,7 @@ class IUserService(BaseService, ABC):
         ----------
         data : UserCreateRequestDTO
             Data for the new user.
-        creator_id : str
+        creator_id : UUID
             ID of the creator.
 
         Returns
@@ -90,19 +107,19 @@ class IUserService(BaseService, ABC):
     @abstractmethod
     async def update_user(
         self,
-        uid: str,
+        uid: UUID,
         data: UserUpdateRequestDTO | SelfUserUpdateRequestDTO,
-        updater_id: str,
+        updater_id: UUID,
     ) -> UserResponseDTO | None:
         """Updates the user with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             User ID.
         data : UserUpdateRequestDTO | SelfUserUpdateRequestDTO
             New data for the user.
-        updater_id : str
+        updater_id : UUID
             ID of the updater.
 
         Returns
@@ -119,12 +136,12 @@ class IUserService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def delete_user(self, uid: str) -> None:
+    async def delete_user(self, uid: UUID) -> None:
         """Deletes the user with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             User ID.
         """
 
@@ -154,7 +171,7 @@ class UserService(IUserService):
         self, odata_options: ODataQueryOptions
     ) -> PaginatedResponse[UserResponseDTO]:
         query = self.get_async_query(odata_options, User)
-        query.join(User.created_by).join(User.updated_by)
+        query.join(User.created_by, User.updated_by)
 
         if not odata_options.orderby:
             query.order_by('username', '-created_at')
@@ -165,9 +182,25 @@ class UserService(IUserService):
         count = await self.get_odata_count(odata_options, query)
         return self.to_paginated_response(odata_options, data, count)
 
-    async def get_user(self, uid: str) -> UserResponseDTO | None:
-        user = await User.get(
-            UUID(uid), join=[User.created_by, User.updated_by]
+    async def get_user(self, uid: UUID) -> UserResponseDTO | None:
+        user = await User.get(uid, join=[User.created_by, User.updated_by])
+        if user is None:
+            return None
+
+        return self.get_response_dto(user)
+
+    async def get_user_by_username_or_email(
+        self, username_or_email: str
+    ) -> UserResponseDTO | None:
+        user = (
+            await User.find(
+                or_(
+                    User.username == username_or_email,
+                    User.email == username_or_email,
+                )
+            )
+            .join(User.created_by, User.updated_by)
+            .first()
         )
         if user is None:
             return None
@@ -175,7 +208,7 @@ class UserService(IUserService):
         return self.get_response_dto(user)
 
     async def create_user(
-        self, data: UserCreateRequestDTO, creator_id: str
+        self, data: UserCreateRequestDTO, creator_id: UUID
     ) -> UserResponseDTO:
         if await User.find(
             or_(User.username == data.username, User.email == data.email)
@@ -191,19 +224,22 @@ class UserService(IUserService):
             role=data.role,
             birthday=data.birthday,
             is_active=data.isActive,
-            created_by_id=UUID(creator_id),
-            updated_by_id=UUID(creator_id),
+            created_by_id=creator_id,
+            updated_by_id=creator_id,
         )
 
+        user = await User.get_or_fail(
+            user.uid, join=[User.created_by, User.updated_by]
+        )
         return self.get_response_dto(user)
 
     async def update_user(
         self,
-        uid: str,
+        uid: UUID,
         data: UserUpdateRequestDTO | SelfUserUpdateRequestDTO,
-        updater_id: str,
+        updater_id: UUID,
     ) -> UserResponseDTO | None:
-        user = await User.get(UUID(uid))
+        user = await User.get(uid, join=[User.created_by, User.updated_by])
         if user is None:
             return None
 
@@ -231,7 +267,7 @@ class UserService(IUserService):
         user.email = data.email
         user.gender = data.gender
         user.birthday = data.birthday
-        user.updated_by_id = UUID(updater_id)
+        user.updated_by_id = updater_id
         if isinstance(data, UserUpdateRequestDTO):
             user.role = data.role
             user.is_active = data.isActive
@@ -239,8 +275,8 @@ class UserService(IUserService):
 
         return self.get_response_dto(user)
 
-    async def delete_user(self, uid: str) -> None:
-        user = await User.get(UUID(uid))
+    async def delete_user(self, uid: UUID) -> None:
+        user = await User.get(uid)
         if user:
             await user.delete()
 

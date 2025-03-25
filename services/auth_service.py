@@ -78,7 +78,7 @@ class AuthService(BaseService):
         """
         return create_token(
             data=TokenPayload(
-                uid=str(user.uid),
+                uid=user.uid,
                 username=user.username,
                 first_name=user.first_name,
                 last_name=user.last_name,

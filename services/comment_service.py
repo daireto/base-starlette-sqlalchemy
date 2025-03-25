@@ -42,12 +42,12 @@ class ICommentService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def get_comment(self, uid: str) -> CommentResponseDTO | None:
+    async def get_comment(self, uid: UUID) -> CommentResponseDTO | None:
         """Gets a comment with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Comment ID.
 
         Returns
@@ -58,7 +58,7 @@ class ICommentService(BaseService, ABC):
 
     @abstractmethod
     async def create_comment(
-        self, data: CommentCreateRequestDTO, publisher: str
+        self, data: CommentCreateRequestDTO, publisher: UUID
     ) -> CommentResponseDTO:
         """Creates a new comment.
 
@@ -66,7 +66,7 @@ class ICommentService(BaseService, ABC):
         ----------
         data : CommentCreateRequestDTO
             Data for the new comment.
-        publisher : str
+        publisher : UUID
             ID of the publisher.
 
         Returns
@@ -78,14 +78,14 @@ class ICommentService(BaseService, ABC):
     @abstractmethod
     async def update_comment(
         self,
-        uid: str,
+        uid: UUID,
         data: CommentUpdateRequestDTO,
     ) -> CommentResponseDTO | None:
         """Updates the comment with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Comment ID.
         data : CommentUpdateRequestDTO
             New data for the comment.
@@ -97,12 +97,12 @@ class ICommentService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def delete_comment(self, uid: str) -> None:
+    async def delete_comment(self, uid: UUID) -> None:
         """Deletes the comment with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Comment ID.
         """
 
@@ -143,32 +143,33 @@ class CommentService(ICommentService):
         count = await self.get_odata_count(odata_options, query)
         return self.to_paginated_response(odata_options, data, count)
 
-    async def get_comment(self, uid: str) -> CommentResponseDTO | None:
-        comment = await Comment.get(
-            UUID(uid), join=[Comment.user, Comment.post]
-        )
+    async def get_comment(self, uid: UUID) -> CommentResponseDTO | None:
+        comment = await Comment.get(uid, join=[Comment.user, Comment.post])
         if comment is None:
             return None
 
         return self.get_response_dto(comment)
 
     async def create_comment(
-        self, data: CommentCreateRequestDTO, publisher: str
+        self, data: CommentCreateRequestDTO, publisher: UUID
     ) -> CommentResponseDTO:
         comment = await Comment.create(
             body=data.body,
-            user_id=UUID(publisher),
+            user_id=publisher,
             post_id=data.postId,
         )
 
+        comment = await Comment.get_or_fail(
+            comment.uid, join=[Comment.user, Comment.post]
+        )
         return self.get_response_dto(comment)
 
     async def update_comment(
         self,
-        uid: str,
+        uid: UUID,
         data: CommentUpdateRequestDTO,
     ) -> CommentResponseDTO | None:
-        comment = await Comment.get(UUID(uid))
+        comment = await Comment.get(uid, join=[Comment.user, Comment.post])
         if comment is None:
             return None
 
@@ -177,8 +178,8 @@ class CommentService(ICommentService):
 
         return self.get_response_dto(comment)
 
-    async def delete_comment(self, uid: str) -> None:
-        comment = await Comment.get(UUID(uid))
+    async def delete_comment(self, uid: UUID) -> None:
+        comment = await Comment.get(uid)
         if comment:
             await comment.delete()
 

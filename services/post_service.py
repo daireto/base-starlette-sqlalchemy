@@ -42,12 +42,12 @@ class IPostService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def get_post(self, uid: str) -> PostResponseDTO | None:
+    async def get_post(self, uid: UUID) -> PostResponseDTO | None:
         """Gets a post with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Post ID.
 
         Returns
@@ -58,7 +58,7 @@ class IPostService(BaseService, ABC):
 
     @abstractmethod
     async def create_post(
-        self, data: PostCreateRequestDTO, publisher: str
+        self, data: PostCreateRequestDTO, publisher: UUID
     ) -> PostResponseDTO:
         """Creates a new post.
 
@@ -66,7 +66,7 @@ class IPostService(BaseService, ABC):
         ----------
         data : PostCreateRequestDTO
             Data for the new post.
-        publisher : str
+        publisher : UUID
             ID of the publisher.
 
         Returns
@@ -78,14 +78,14 @@ class IPostService(BaseService, ABC):
     @abstractmethod
     async def update_post(
         self,
-        uid: str,
+        uid: UUID,
         data: PostUpdateRequestDTO,
     ) -> PostResponseDTO | None:
         """Updates the post with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Post ID.
         data : PostUpdateRequestDTO
             New data for the post.
@@ -97,12 +97,12 @@ class IPostService(BaseService, ABC):
         """
 
     @abstractmethod
-    async def delete_post(self, uid: str) -> None:
+    async def delete_post(self, uid: UUID) -> None:
         """Deletes the post with the provided ID.
 
         Parameters
         ----------
-        uid : str
+        uid : UUID
             Post ID.
         """
 
@@ -143,31 +143,32 @@ class PostService(IPostService):
         count = await self.get_odata_count(odata_options, query)
         return self.to_paginated_response(odata_options, data, count)
 
-    async def get_post(self, uid: str) -> PostResponseDTO | None:
-        post = await Post.get(UUID(uid), join=[Post.publisher])
+    async def get_post(self, uid: UUID) -> PostResponseDTO | None:
+        post = await Post.get(uid, join=[Post.publisher])
         if post is None:
             return None
 
         return self.get_response_dto(post)
 
     async def create_post(
-        self, data: PostCreateRequestDTO, publisher: str
+        self, data: PostCreateRequestDTO, publisher: UUID
     ) -> PostResponseDTO:
         post = await Post.create(
             title=data.title,
             body=data.body,
             tags=data.tags,
-            publisher_id=UUID(publisher),
+            publisher_id=publisher,
         )
 
+        post = await Post.get_or_fail(post.uid, join=[Post.publisher])
         return self.get_response_dto(post)
 
     async def update_post(
         self,
-        uid: str,
+        uid: UUID,
         data: PostUpdateRequestDTO,
     ) -> PostResponseDTO | None:
-        post = await Post.get(UUID(uid))
+        post = await Post.get(uid, join=[Post.publisher])
         if post is None:
             return None
 
@@ -178,8 +179,8 @@ class PostService(IPostService):
 
         return self.get_response_dto(post)
 
-    async def delete_post(self, uid: str) -> None:
-        post = await Post.get(UUID(uid))
+    async def delete_post(self, uid: UUID) -> None:
+        post = await Post.get(uid)
         if post:
             await post.delete()
 
