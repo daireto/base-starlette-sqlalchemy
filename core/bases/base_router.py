@@ -171,10 +171,3 @@ class BaseRouter(ABC):
             logger.warning(e)
         except Exception as e:
             logger.error(f'Could not set locale to I18N: {e}')
-
-    def __get_int_query_param(self, name: str, default: int) -> int:
-        try:
-            value = self.request.query_params.get(name, default)
-            return int(value)
-        except ValueError:
-            return default
